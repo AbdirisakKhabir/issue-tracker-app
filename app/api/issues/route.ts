@@ -1,0 +1,31 @@
+import { NextRequest, NextResponse } from "next/server";
+import prisma from "@/prisma/client";
+import { IssueSchema } from "@/app/validationSchemas";
+import { getServerSession } from "next-auth";
+import authOptions from "@/app/auth/authOptions";
+
+
+export async function POST(request: NextRequest) {
+    // GET THE SESSION
+    const session = await getServerSession(authOptions);
+
+    // IF THERE IS NO SESSION RETURN AUTHORIZED STATUS OF 401
+    if(!session)
+        return NextResponse.json({}, {status: 401})
+
+    // OTHERWISE
+    const body = await request.json();
+
+    const validation = IssueSchema.safeParse(body);
+
+    if(!validation.success)
+    return NextResponse.json(validation.error.format(), {status: 400})
+
+    const newIssue = await prisma.issue.create({
+        data: {title: body.title, description: body.description}
+    })
+
+    return NextResponse.json(newIssue, {status: 201})
+
+}
+
